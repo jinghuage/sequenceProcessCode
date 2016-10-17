@@ -15,7 +15,17 @@ import sys
 ##########################################################
 def read_GP41():
     df = pd.read_csv('ALL_GP41_FINAL_Genbank.csv')
-    print df.shape
+    print df.shape #(3061, 11)
+
+    names = ["Region","Community", "SLL-Couples"]
+    for name in names:
+        print df[name].dtype
+        print df[name].loc[df[name].isnull()].shape
+
+        df[name] = df[name].fillna(-1)
+        df[name] = df[name].astype(int)
+        print df[name].dtype
+
     #print df.head(5)
     return df
 
@@ -26,12 +36,12 @@ def filter_SampleTime(df, SampleTime):
     df_r = df[df["Sample Time"]==SampleTime]
     print df_r.shape
 
-    #df_r.to_csv("GP41_" + SampleTime + ".csv", index=False)
+    df_r.to_csv("GP41_" + SampleTime + ".csv", index=False)
     return df_r
 
 def read_R13():
     df = pd.read_csv("GP41_R13.csv")
-    print df.shape
+    print df.shape #(1023, 11)
     # print df['Sequence Name'].describe()
     # print df['Accession Number'].describe()
     # print df[df['Accession Number'].isnull()].shape
@@ -59,7 +69,7 @@ def filter_with_couple(df, name):
 
     df_c = df[pd.notnull(df["Union ID 1"])]
     df_c["Couple"] = df_c.apply(find_my_couple, axis=1)
-    print df_c.shape
+    print df_c.shape #(158,12)
     df_c.to_csv(name+"With_Couple.csv", index=False)
 
 
@@ -71,7 +81,7 @@ def filter_with_couple(df, name):
 def read_couples():
     df_c = pd.read_csv('couples_gp41.csv', header=None)
     df_c.columns=["c1","c2"]
-    print df_c.shape
+    print df_c.shape #(91,2)
 
     def split_id(row):
         c1str = row.c1
@@ -112,8 +122,26 @@ def read_cluster(clusterid):
     newcols.columns = ["seqid","region","subtype"]
     newdf_cls = df_cls.join(newcols)
 
-    newfilename = "GP41_R13_cluster_" + clusterid + ".csv"
-    newdf_cls.to_csv(newfilename, index=False)
+    #newfilename = "GP41_R13_cluster_" + clusterid + ".csv"
+    #newdf_cls.to_csv(newfilename, index=False)
+
+    return newdf_cls.set_index(['seqid'])
+
+
+
+def check_in(clusterid, df_cls, df_r):
+    print clusterid
+    print df_cls.shape
+    print df_r.shape
+
+    print df_r['Sequence Name'].isin(df_cls.index).value_counts()
+
+    s = df_cls['ClusterID'].reindex(df_r['Sequence Name'], fill_value=-1)
+    #s = s.fillna(-1)
+    #s = s.astype(int)
+
+    df_r['ClusterID_'+clusterid] = s.values
+    print df_r['ClusterID_'+clusterid].dtype
 
 
 ##########################################################
